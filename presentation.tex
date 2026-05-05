@@ -36,6 +36,45 @@
 
 \metroset{block=fill, progressbar=frametitle, sectionpage=progressbar, numbering=fraction}
 
+% =====================================================
+% Custom section page: giant numeral + accent bar + dots
+% =====================================================
+\setbeamertemplate{section page}{%
+\begin{tikzpicture}[overlay,remember picture]
+  % Left blue panel
+  \fill[ubblue] (current page.south west) rectangle ([xshift=3.4cm]current page.north west);
+  % Thin red accent strip
+  \fill[ubaccent] ([xshift=3.4cm]current page.south west) rectangle ([xshift=3.55cm]current page.north west);
+
+  % Decorative top dots
+  \foreach \i in {0,1,...,5}{
+    \fill[white,opacity=0.18] ([xshift=0.55cm+\i*0.42cm,yshift=-1.0cm]current page.north west) circle (4pt);
+  }
+  % Decorative bottom dots
+  \foreach \i in {0,1,...,5}{
+    \fill[white,opacity=0.10] ([xshift=0.55cm+\i*0.42cm,yshift=0.9cm]current page.south west) circle (4pt);
+  }
+
+  % Giant section number (left panel)
+  \node[text=white,font=\fontsize{110}{110}\selectfont\bfseries,opacity=0.95,anchor=center]
+    at ([xshift=1.7cm,yshift=-4.3cm]current page.north west)
+    {\insertsectionnumber};
+
+  % Section title (right side)
+  \node[text=ubblue,anchor=west,font=\fontsize{30}{34}\selectfont\bfseries,align=left]
+    at ([xshift=4.1cm,yshift=-3.9cm]current page.north west)
+    {\insertsectionhead};
+  % Accent underline
+  \draw[ubaccent,line width=2.5pt,line cap=round]
+    ([xshift=4.1cm,yshift=-4.7cm]current page.north west) --
+    ([xshift=6.4cm,yshift=-4.7cm]current page.north west);
+  % Subtle caption
+  \node[text=ubdark!55,anchor=west,font=\normalsize\itshape,align=left]
+    at ([xshift=4.1cm,yshift=-5.25cm]current page.north west)
+    {sectiunea \insertsectionnumber\ din 8};
+\end{tikzpicture}
+}
+
 % ============== TITLE ==============
 \title{\textbf{Detectia limbajului ofensiv, urii\\ si misoginiei in texte romanesti}}
 \subtitle{Pipeline unificat cu cinci clase: TF-IDF baselines si RoBERT}
@@ -211,18 +250,40 @@
 % ====================================================
 
 \begin{frame}{Peisajul domeniului}
-\begin{columns}[T]
-\column{0.55\textwidth}
-\begin{itemize}
-  \setlength\itemsep{0.7em}
-  \item \textbf{OffensEval 2019/2020} \\ \sub{taxonomie ierarhica, multilingv}
-  \item \textbf{HatEval 2019} \\ \sub{ura impotriva femeilor si imigrantilor}
-  \item \textbf{Survey-uri} \sub{(Fortuna \& Nunes 2018; Schmidt \& Wiegand 2017)}
-  \item \textbf{Modele perspective-aware} \\ \sub{(Akhtar et al., 2021)}
+\vspace{0.2em}
+\centering
+% Mini timeline
+\begin{tikzpicture}[every node/.style={align=center,font=\scriptsize}]
+  \draw[ubdark!30,line width=1.5pt] (-4.6,0) -- (4.6,0);
+  \foreach \x/\y/\lab/\desc/\col in {%
+    -4.0/2017/Survey/{Schmidt\\\& Wiegand}/{ubdark!60},
+    -2.0/2018/Survey/{Fortuna\\\& Nunes}/{ubdark!60},
+    0/2019/{OffensEval\\HatEval}/{taxonomie\\ierarhica}/{ubblue},
+    2.0/2020/Multilingual/{OffensEval\\multilingv}/{ubblue},
+    4.0/2021/{Perspective-aware}/{(Akhtar\\et al.)}/{ubaccent}%
+  }{%
+    \fill[\col] (\x,0) circle (4pt);
+    \node[anchor=south,text=\col,font=\footnotesize\bfseries] at (\x,0.15) {\y};
+    \node[anchor=south,text=ubdark!85,font=\scriptsize\bfseries] at (\x,0.55) {\lab};
+    \node[anchor=north,text=ubdark!65] at (\x,-0.15) {\desc};
+  }
+\end{tikzpicture}
+
+\vspace{0.5em}
+
+\begin{columns}[T,onlytextwidth]
+\column{0.5\textwidth}
+\begin{block}{Setup-ul nostru se aliniaza cu}
+\small
+\begin{itemize}\setlength\itemsep{0.25em}
+  \item Hierarchical offense (OffensEval)
+  \item Identity-targeted abuse (HatEval)
+  \item Subtypes pastrate (CoRoSeOf)
 \end{itemize}
-\column{0.45\textwidth}
+\end{block}
+\column{0.5\textwidth}
 \begin{alertblock}{Idee cheie \sub{(Akhtar et al., 2021)}}
-Dezacordul intre adnotatori este \emph{semnal}, nu zgomot.\\[0.3em]
+\small Dezacordul intre adnotatori e \emph{semnal}, nu zgomot.\\[0.2em]
 \sub{$\Rightarrow$ separam abuzul targetat pe identitate de insulta generica.}
 \end{alertblock}
 \end{columns}
@@ -233,44 +294,78 @@ Dezacordul intre adnotatori este \emph{semnal}, nu zgomot.\\[0.3em]
 % ====================================================
 
 \begin{frame}{Doua surse complementare}
+\vspace{0.4em}
 \centering
-\renewcommand{\arraystretch}{1.3}
-\begin{tabular}{lrl}
-\toprule
-\textbf{Sursa} & \textbf{Randuri} & \textbf{Rol} \\
-\midrule
-CoRoSeOf            & 39{,}008 & sexism / ofensa \\
-\textsc{news-ro-offense} &  4{,}053 & 5-class hate / offense \\
-\midrule
-\textbf{Unificat}   & \textbf{43{,}061} & schema comuna \\
-\bottomrule
-\end{tabular}
-\vspace{1em}
-\begin{block}{Schema}
-\texttt{text} $\cdot$ \texttt{label\_5} $\cdot$ \texttt{offensive\_flag} $\cdot$ \texttt{sexism\_flag} $\cdot$ \texttt{target} $\cdot$ \texttt{sexism\_subtype} $\cdot$ \texttt{quality}
-\end{block}
+\begin{tikzpicture}[every node/.style={align=center}]
+  % --- Source 1: CoRoSeOf (large)
+  \node[circle,draw=ubblue,fill=ubblue!12,line width=1.2pt,
+        minimum size=2.6cm,drop shadow={opacity=0.2,shadow xshift=1pt,shadow yshift=-1pt}]
+        (a) at (-4.5,0) {%
+          \begin{tabular}{c}\textbf{\textcolor{ubblue}{CoRoSeOf}}\\[0.05em]
+          {\Large\textbf{39\,008}}\\[-0.05em]
+          {\scriptsize sexism / ofensa}\end{tabular}};
+
+  % --- Source 2: news-ro-offense (smaller, sized proportionally)
+  \node[circle,draw=ubaccent,fill=ubaccent!10,line width=1.2pt,
+        minimum size=1.6cm,drop shadow={opacity=0.2,shadow xshift=1pt,shadow yshift=-1pt}]
+        (b) at (-4.5,-2.5) {%
+          \begin{tabular}{c}{\scriptsize\textbf{\textcolor{ubaccent}{news-ro-offense}}}\\[-0.05em]
+          {\small\textbf{4\,053}}\end{tabular}};
+
+  % --- Merge target
+  \node[rectangle,rounded corners=14pt,draw=ubdark,fill=ubsoft,
+        line width=1.2pt,minimum width=4.3cm,minimum height=2.4cm,
+        drop shadow={opacity=0.25,shadow xshift=2pt,shadow yshift=-2pt}]
+        (u) at (1.7,-1.25) {%
+          \begin{tabular}{c}\textbf{\textcolor{ubdark}{\large Corpus unificat}}\\[0.2em]
+          {\fontsize{22}{22}\selectfont\textbf{\textcolor{ubaccent}{43\,061}}}\\[0.1em]
+          {\small randuri \quad 5 clase}\end{tabular}};
+
+  % Arrows
+  \draw[-{Stealth[length=4mm,width=3mm]},ubblue,line width=1.4pt]
+    (a.east) .. controls +(1.5,0) and +(-1.5,0.3) .. (u.west);
+  \draw[-{Stealth[length=4mm,width=3mm]},ubaccent,line width=1.4pt]
+    (b.east) .. controls +(1.5,0) and +(-1.5,-0.3) .. (u.west);
+
+  % Schema label below
+  \node[anchor=north,font=\scriptsize,text=ubdark!75,align=center]
+    at ([yshift=-0.3cm]u.south) {%
+      \texttt{text} $\cdot$ \texttt{label\_5} $\cdot$ \texttt{offensive\_flag} $\cdot$ \texttt{sexism\_flag} \\
+      $\cdot$ \texttt{target} $\cdot$ \texttt{sexism\_subtype} $\cdot$ \texttt{quality}};
+\end{tikzpicture}
 \end{frame}
 
 \begin{frame}{Taxonomia cu cinci clase}
 \vspace{0.5em}
-\begin{center}
-\renewcommand{\arraystretch}{1.35}
-\begin{tabular}{cll}
-\toprule
-\textbf{ID} & \textbf{Clasa} & \textbf{Semnificatie} \\
-\midrule
-0 & \textsc{non-off.}      & text neofensiv \\
-1 & \textsc{insult}        & insulta generica \\
-2 & \textsc{racism}        & continut rasist \\
-3 & \textsc{homophobia}    & continut homofob \\
-4 & \textsc{sexism}        & sexism / misoginie \\
-\bottomrule
-\end{tabular}
-\end{center}
+\centering
+\begin{tikzpicture}[every node/.style={align=center,font=\small}]
+\foreach \i/\name/\desc/\col in {%
+  0/non-off./{text neofensiv}/{ubgreen},
+  1/insult/{insulta generica}/{uborange},
+  2/racism/{continut rasist}/{ubaccent},
+  3/homophobia/{continut homofob}/{ubblue},
+  4/sexism/{sexism /\\misoginie}/{ubaccent!70!ubblue}%
+}{%
+  \begin{scope}[xshift=\i*2.6cm]
+    % Big colored ID badge
+    \node[circle,fill=\col,text=white,font=\Huge\bfseries,
+          minimum size=1.3cm,inner sep=0pt,
+          drop shadow={opacity=0.25,shadow xshift=1.5pt,shadow yshift=-1.5pt}]
+          (id\i) at (0,0) {\i};
+    % Class card under
+    \node[rectangle,rounded corners=8pt,draw=\col!70,fill=\col!8,
+          line width=0.8pt,minimum width=2.3cm,minimum height=1.8cm,
+          below=0.35cm of id\i,inner sep=4pt,
+          drop shadow={opacity=0.18,shadow xshift=1pt,shadow yshift=-1pt}]
+          {\textbf{\textcolor{\col!70!black}{\name}}\\[0.2em]\scriptsize\desc};
+  \end{scope}
+}
+\end{tikzpicture}
+
 \vspace{0.6em}
 \begin{center}
-\begin{minipage}{0.85\textwidth}
-\centering\sub{Maparea pastreaza subtipurile CoRoSeOf\\ (\textit{direct, descriptive, reporting}) in \texttt{sexism\_subtype}.}
+\begin{minipage}{0.86\textwidth}
+\centering\sub{Maparea pastreaza subtipurile CoRoSeOf (\textit{direct, descriptive, reporting}) in \texttt{sexism\_subtype}.}
 \end{minipage}
 \end{center}
 \end{frame}
@@ -517,12 +612,26 @@ LogReg     & 0.751 & 0.698 & 0.517 & 0.784 & 0.667 & 0.690 \\
 \end{tabular}
 \vspace{1em}
 
-\begin{columns}[T]
-\column{0.5\textwidth}
-\centering \bignum{+0.022} \\ \sub{macro-F1, SVM peste LogReg}
-\column{0.5\textwidth}
-\centering \bignum{+0.082} \\ \sub{F1 pe \textit{sexism}, SVM peste LogReg}
-\end{columns}
+\begin{center}
+\begin{tikzpicture}[every node/.style={align=center}]
+  % Trophy / chevron 1
+  \node[rectangle,rounded corners=10pt,draw=ubgreen,fill=ubgreen!10,
+        line width=1pt,minimum width=4.6cm,minimum height=1.5cm,
+        drop shadow={opacity=0.2,shadow xshift=1.5pt,shadow yshift=-1.5pt}] (a) at (-3,0) {%
+    \begin{tabular}{c}
+      \textbf{\textcolor{ubgreen!70!black}{\large $\uparrow$ +0.022}}\\[0.05em]
+      \scriptsize macro-F1, SVM peste LogReg
+    \end{tabular}};
+  % Chevron 2
+  \node[rectangle,rounded corners=10pt,draw=ubaccent,fill=ubaccent!10,
+        line width=1pt,minimum width=4.6cm,minimum height=1.5cm,
+        drop shadow={opacity=0.2,shadow xshift=1.5pt,shadow yshift=-1.5pt}] (b) at (3,0) {%
+    \begin{tabular}{c}
+      \textbf{\textcolor{ubaccent}{\large $\uparrow$ +0.082}}\\[0.05em]
+      \scriptsize F1 pe \textit{sexism}, SVM peste LogReg
+    \end{tabular}};
+\end{tikzpicture}
+\end{center}
 \end{frame}
 
 \begin{frame}{Macro-F1 pe clase}
@@ -642,21 +751,72 @@ Orice deployment in productie necesita \alert{revizuire umana} pentru a evita de
 % ====================================================
 
 \begin{frame}{Trei idei de retinut}
-\begin{enumerate}
-  \setlength\itemsep{0.9em}
-  \item \textbf{Unificarea conteaza.} \\ \sub{Doua corpusuri eterogene $\to$ o taxonomie utila cu 5 clase.}
-  \item \textbf{SVM calibrat bate LogReg.} \\ \sub{0.720 vs.\ 0.698 macro-F1 pe acelasi feature space.}
-  \item \textbf{Datele, nu modelul, sunt plafonul.} \\ \sub{Clasele minoritare misca macro-F1 --- mai multe exemple.}
-\end{enumerate}
+\vspace{0.4em}
+\centering
+\begin{tikzpicture}[every node/.style={align=left,font=\normalsize}]
+  \foreach \i/\title/\sub/\col in {%
+    1/{Unificarea conteaza}/{Doua corpusuri eterogene $\to$ o taxonomie utila cu 5 clase.}/{ubblue},
+    2/{SVM calibrat bate LogReg}/{0.720 vs.\ 0.698 macro-F1 pe acelasi feature space.}/{ubaccent},
+    3/{Datele\, nu modelul\, sunt plafonul}/{Clasele minoritare misca macro-F1 --- mai multe exemple.}/{ubgreen!75!black}%
+  }{%
+    \begin{scope}[yshift=-\i*1.6cm]
+      % Big numbered circle
+      \node[circle,fill=\col,text=white,font=\fontsize{30}{30}\selectfont\bfseries,
+            minimum size=1.4cm,inner sep=0pt,
+            drop shadow={opacity=0.3,shadow xshift=2pt,shadow yshift=-2pt}]
+            (n\i) at (-5.5,0) {\i};
+      % Title and sub
+      \node[anchor=west] at ([xshift=0.4cm]n\i.east)
+        {\begin{tabular}{@{}l@{}}\textbf{\textcolor{\col!80!black}{\Large \title}}\\[0.15em]
+         \textcolor{ubdark!75}{\small\sub}\end{tabular}};
+    \end{scope}
+  }
+\end{tikzpicture}
 \end{frame}
 
 % ====================================================
-\begin{frame}[standout]
-\centering
-\Huge Multumim! \\[0.6em]
-\large Intrebari?\\[1em]
-\normalsize \sub{news-ro-offense $\cup$ CoRoSeOf} \quad \sub{Universitatea din Bucuresti}
+{
+\setbeamertemplate{footline}{}
+\begin{frame}[plain]
+\begin{tikzpicture}[overlay,remember picture]
+  % Full blue background
+  \fill[ubblue] (current page.north west) rectangle (current page.south east);
+  % Decorative big circles (top right)
+  \begin{scope}[shift={([xshift=-1.5cm,yshift=-1.5cm]current page.north east)}]
+    \foreach \r in {0.6,1.2,...,3.6}
+      \draw[white,opacity=0.10,line width=1.2pt] (0,0) circle (\r);
+    \fill[white,opacity=0.20] (0,0) circle (0.4);
+  \end{scope}
+  % Decorative big circles (bottom left)
+  \begin{scope}[shift={([xshift=1.8cm,yshift=1.6cm]current page.south west)}]
+    \foreach \r in {0.4,0.9,...,2.9}
+      \draw[white,opacity=0.10,line width=1.2pt] (0,0) circle (\r);
+  \end{scope}
+  % Speech bubbles cluster
+  \begin{scope}[shift={([xshift=-2.0cm,yshift=2.0cm]current page.south east)}]
+    \fill[white,opacity=0.16,rounded corners=4pt] (0,0) rectangle (1.0,0.6);
+    \fill[white,opacity=0.22,rounded corners=4pt] (-1.2,0.7) rectangle (-0.1,1.3);
+    \fill[white,opacity=0.30,rounded corners=4pt] (-0.4,1.5) rectangle (0.8,2.1);
+  \end{scope}
+
+  % Big "Multumim!"
+  \node[text=white,font=\fontsize{60}{60}\selectfont\bfseries,anchor=center]
+    at ([yshift=0.6cm]current page.center) {Multumim!};
+  % Accent line
+  \draw[ubaccent,line width=3pt,line cap=round]
+    ([yshift=-0.1cm,xshift=-1.5cm]current page.center) --
+    ([yshift=-0.1cm,xshift=1.5cm]current page.center);
+  % Subtitle
+  \node[text=white!85,font=\Large,anchor=center]
+    at ([yshift=-0.7cm]current page.center) {\textit{Intrebari?}};
+
+  % Footer info
+  \node[text=white!75,font=\footnotesize,anchor=center]
+    at ([yshift=-2.5cm]current page.center)
+    {\texttt{news-ro-offense} $\cup$ \texttt{CoRoSeOf} \quad $\cdot$ \quad Universitatea din Bucuresti};
+\end{tikzpicture}
 \end{frame}
+}
 % ====================================================
 
 \appendix
