@@ -13,6 +13,7 @@
 \providecommand{\cite}[1]{}
 \usepackage{xcolor}
 \usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,shapes.geometric,shadows,backgrounds,calc,decorations.pathmorphing,fit,shapes.symbols}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.17}
 
@@ -55,11 +56,81 @@
     \end{beamercolorbox}%
   \end{minipage}%
 }
+\newcommand{\modelcard}[3]{%
+  \begin{minipage}[t][4.4cm][t]{0.31\textwidth}%
+    \begin{beamercolorbox}[wd=\linewidth,ht=4.4cm,dp=0pt,rounded=true,shadow=true,sep=8pt]{block body}%
+      \parbox[t][4.0cm][t]{0.94\linewidth}{%
+        \centering #1 \\[0.3em]
+        \textbf{\textcolor{ubblue}{\large #2}}\\[0.3em]
+        \footnotesize #3
+      }%
+    \end{beamercolorbox}%
+  \end{minipage}%
+}
 
 \begin{document}
 
 % ====================================================
-\maketitle
+% Custom title slide with TikZ artwork background
+{
+\setbeamertemplate{footline}{}
+\begin{frame}[plain]
+\begin{tikzpicture}[overlay,remember picture]
+  % Background gradient strip on top
+  \fill[ubblue] (current page.north west) rectangle ([yshift=-3.4cm]current page.north east);
+  \fill[ubaccent] ([yshift=-3.4cm]current page.north west) rectangle ([yshift=-3.55cm]current page.north east);
+
+  % Decorative concentric arcs (top right)
+  \begin{scope}[shift={([xshift=-1.2cm,yshift=-1.6cm]current page.north east)}]
+    \foreach \r in {0.5,1.0,...,3.0}
+      \draw[white,opacity=0.15,line width=1.2pt] (0,0) circle (\r);
+    \fill[white,opacity=0.25] (0,0) circle (0.32);
+  \end{scope}
+
+  % Speech-bubble decorative cluster (top left)
+  \begin{scope}[shift={([xshift=1.0cm,yshift=-1.0cm]current page.north west)}]
+    \fill[white,opacity=0.18,rounded corners=4pt] (0,0) rectangle (0.9,0.55);
+    \fill[white,opacity=0.18,rounded corners=4pt] (0.2,-0.7) rectangle (1.4,-0.15);
+    \fill[white,opacity=0.30,rounded corners=4pt] (0.9,-1.4) rectangle (2.1,-0.85);
+  \end{scope}
+
+  % Title text
+  \node[anchor=west,text=white,align=left]
+    at ([xshift=0.8cm,yshift=-1.6cm]current page.north west)
+    {\fontsize{20}{24}\selectfont\textbf{Detectia limbajului ofensiv,}\\[0.15em]
+     \fontsize{20}{24}\selectfont\textbf{urii \& misoginiei in texte romanesti}};
+  \node[anchor=west,text=white!85,align=left]
+    at ([xshift=0.8cm,yshift=-2.85cm]current page.north west)
+    {\small Pipeline unificat 5-clase $\cdot$ TF-IDF baselines $\cdot$ RoBERT};
+
+  % Authors block
+  \node[anchor=west,align=left,text=ubdark]
+    at ([xshift=0.8cm,yshift=-5.0cm]current page.north west)
+    {\textbf{\textcolor{ubblue}{Autori}}\\[0.3em]
+     Adrian Aparaschivei \quad Roberta-Gabriela Nechita\\
+     Bianca-Nicoleta Paraschiv \quad El-Abassi Tamer Alexandru};
+
+  % Institution block
+  \node[anchor=west,align=left,text=ubdark!80]
+    at ([xshift=0.8cm,yshift=-7.0cm]current page.north west)
+    {\small \textbf{Universitatea din Bucuresti}\\[0.15em]
+     \small Facultatea de Matematica si Informatica};
+
+  % Date pill (bottom right)
+  \node[anchor=south east,fill=ubaccent,text=white,rounded corners=8pt,inner sep=6pt]
+    at ([xshift=-0.6cm,yshift=0.6cm]current page.south east)
+    {\small\textbf{\today}};
+
+  % Keyword tags floating (bottom left)
+  \begin{scope}[shift={([xshift=0.8cm,yshift=0.8cm]current page.south west)}]
+    \node[fill=ubblue!10,text=ubblue,rounded corners=10pt,inner sep=4pt,font=\scriptsize] (k1) at (0,0) {\strut\textbf{NLP}};
+    \node[fill=ubaccent!10,text=ubaccent,rounded corners=10pt,inner sep=4pt,font=\scriptsize,right=4pt of k1] (k2) {\strut\textbf{hate speech}};
+    \node[fill=ubgreen!12,text=ubgreen!70!black,rounded corners=10pt,inner sep=4pt,font=\scriptsize,right=4pt of k2] (k3) {\strut\textbf{Romanian}};
+    \node[fill=uborange!15,text=uborange!80!black,rounded corners=10pt,inner sep=4pt,font=\scriptsize,right=4pt of k3] (k4) {\strut\textbf{TF-IDF + BERT}};
+  \end{scope}
+\end{tikzpicture}
+\end{frame}
+}
 % ====================================================
 
 \begin{frame}{Cuprins}
@@ -95,13 +166,22 @@
   \item \textbf{Sens dependent de context} \\ \sub{insulta vs. citat vs. critica}
 \end{itemize}
 \column{0.5\textwidth}
-\begin{block}{Capcana acuratetei}
-Un model care prezice \emph{mereu} \\ \textit{non-offensive} atinge\\[0.3em]
-\centering\bignum{78\%}\\[0.2em]
-\sub{accuracy --- dar nu detecteaza nimic.}
-\end{block}
-\vspace{0.3em}
-\centering \alert{$\Rightarrow$ macro-F1 este metrica corecta.}
+\centering
+\textbf{Capcana acuratetei}\\[0.3em]
+\sub{Modelul care prezice \emph{mereu} non-offensive:}\\[0.4em]
+
+\begin{tikzpicture}[scale=1.0]
+  % background ring
+  \draw[ubdark!15,line width=8pt] (0,0) circle (1.3);
+  % filled arc up to 78% (from 90 deg, going clockwise = 360*0.78=280.8 deg)
+  \draw[ubaccent,line width=8pt,line cap=round]
+    ([shift={(90:1.3)}]0,0) arc[start angle=90,end angle=90-280.8,radius=1.3];
+  % center text
+  \node[text=ubaccent] at (0,0.18) {\fontsize{26}{30}\selectfont\textbf{78\%}};
+  \node[text=ubdark!70,font=\scriptsize] at (0,-0.35) {accuracy};
+\end{tikzpicture}\\[0.3em]
+\sub{...dar \textbf{nu detecteaza nimic}.}\\[0.6em]
+\alert{$\Rightarrow$ macro-F1 este metrica corecta.}
 \end{columns}
 \end{frame}
 
@@ -275,21 +355,48 @@ Test  &   245   & 120 &  30 &  38 &  27 &  30 \\
 % ====================================================
 
 \begin{frame}{Preprocesare adaptata romanei}
+\vspace{0.2em}
+\centering
+\begin{tikzpicture}[
+  every node/.style={font=\footnotesize},
+  step/.style={rectangle, rounded corners=5pt, draw=ubblue!60, fill=ubblue!10,
+               text=ubdark, minimum width=2.0cm, minimum height=0.7cm,
+               align=center, drop shadow={opacity=0.15,shadow xshift=1pt,shadow yshift=-1pt}},
+  hot/.style ={rectangle, rounded corners=5pt, draw=ubaccent!70, fill=ubaccent!10,
+               text=ubaccent!80!black, minimum width=2.0cm, minimum height=0.7cm,
+               align=center, font=\footnotesize\bfseries,
+               drop shadow={opacity=0.15,shadow xshift=1pt,shadow yshift=-1pt}},
+  io/.style  ={rectangle, rounded corners=10pt, draw=ubdark, fill=ubsoft,
+               minimum width=2.4cm, minimum height=0.7cm, align=center, font=\footnotesize\bfseries},
+  flow/.style={-{Stealth[length=2.5mm]}, ubdark!60, line width=0.7pt}
+]
+\node[io] (raw) at (0,0) {Raw};
+\node[step,right=0.3cm of raw]   (s1) {URL/Mention};
+\node[step,right=0.3cm of s1]    (s2) {Hashtag\\split};
+\node[step,right=0.3cm of s2]    (s3) {Emoji\\$\to$ text};
+\node[step,right=0.3cm of s3]    (s4) {Elongatii};
+\node[hot, below=0.55cm of s4]   (s5) {Leetspeak};
+\node[step,left=0.3cm of s5]     (s6) {Lowercase};
+\node[step,left=0.3cm of s6]     (s7) {Diacritice};
+\node[step,left=0.3cm of s7]     (s8) {Stopwords\\(neg.\ keep)};
+\node[hot, left=0.3cm of s8]     (s9) {Stemming};
+\node[io,  left=0.3cm of s9]     (out) {Clean};
+
+\draw[flow] (raw) -- (s1);
+\draw[flow] (s1) -- (s2);
+\draw[flow] (s2) -- (s3);
+\draw[flow] (s3) -- (s4);
+\draw[flow] (s4.south) .. controls +(0,-0.35) and +(0,0.35) .. (s5.north);
+\draw[flow] (s5) -- (s6);
+\draw[flow] (s6) -- (s7);
+\draw[flow] (s7) -- (s8);
+\draw[flow] (s8) -- (s9);
+\draw[flow] (s9) -- (out);
+\end{tikzpicture}
+
+\vspace{0.6em}
 \begin{columns}[T,onlytextwidth]
-\column{0.5\textwidth}
-\textbf{Pipeline}
-\begin{itemize}
-  \setlength\itemsep{0.4em}
-  \item URLs $\to$ \texttt{<URL>}, mentions $\to$ \texttt{<USER>}
-  \item Hashtag splitting
-  \item Emoji $\to$ text \sub{(semnal afectiv)}
-  \item Colaps de elongatii \\ \sub{\textit{frumoasaaaa} $\to$ \textit{frumoasaa}}
-  \item Lowercase + scoatere diacritice
-  \item \alert{Leetspeak} \sub{\texttt{0$\to$o, 3$\to$e, 4$\to$a, @$\to$a}}
-  \item Stopwords \emph{mai putin} \textit{nu, nici, fara}
-  \item \alert{Stemming} \sub{morfologie bogata}
-\end{itemize}
-\column{0.5\textwidth}
+\column{0.55\textwidth}
 \begin{exampleblock}{Exemplu pas cu pas}
 \footnotesize
 \begin{tabularx}{\linewidth}{@{}lX@{}}
@@ -300,8 +407,15 @@ lowercase            & \texttt{<user> esti proasta romani} \\
 stopwords            & \texttt{<user> proasta romani} \\
 \end{tabularx}
 \end{exampleblock}
-\vspace{0.3em}
-\centering \alert{130k $\to$ 12.7k} features dupa stemming.
+\column{0.42\textwidth}
+\vspace{0.2em}
+\begin{tikzpicture}
+  \node[draw=ubaccent,fill=ubaccent!8,rounded corners=10pt,inner sep=10pt,line width=0.8pt] {%
+    \begin{minipage}{0.85\linewidth}\centering
+    \textbf{\textcolor{ubaccent}{\Large 130k $\to$ 12.7k}}\\[0.2em]
+    \sub{features dupa stemming}
+    \end{minipage}};
+\end{tikzpicture}
 \end{columns}
 \end{frame}
 
@@ -321,37 +435,68 @@ $\approx$ \textbf{20{,}000} features (subset demo)
 \end{frame}
 
 \begin{frame}{Trei clasificatori, un singur feature space}
-\begin{columns}[T,onlytextwidth]
-\column{0.33\textwidth}
-\begin{block}{LogReg}
-\small
-softmax posterior \\
-$C \in \{10^{-3},\dots,10^{2}\}$ \\
-\textbf{best $C=0.3$} \\
-\texttt{class\_weight=balanced} \\
-\alert{stem=True}
-\end{block}
-\column{0.33\textwidth}
-\begin{block}{Linear SVM}
-\small
-max-margin hyperplane \\
-$C \in \{0.1,\dots,5.0\}$ \\
-\textbf{best $C=0.5$} \\
-+ \alert{Platt calibration} (5-fold) \\
-stem=False
-\end{block}
-\column{0.33\textwidth}
-\begin{block}{RoBERT}
-\small
-Romanian BERT \\
-AdamW, lr $=2\!\cdot\!10^{-5}$ \\
-batch 16, 5 epochs \\
-classifier head $\to$ 5 clase \\
-\sub{baseline contextual}
-\end{block}
-\end{columns}
-\vspace{0.6em}
-\centering 5-fold \texttt{StratifiedKFold} CV --- evita fold-uri fara homophobia (doar 125 ex.\ train).
+\vspace{0.3em}
+\begin{center}
+% --- LogReg icon: sigmoid curve
+\modelcard{%
+  \begin{tikzpicture}[scale=0.6]
+    \draw[ubdark!40,->] (-1.4,0) -- (1.4,0);
+    \draw[ubdark!40,->] (0,-0.1) -- (0,1.1);
+    \draw[ubblue,line width=1.2pt,domain=-1.4:1.4,samples=40,smooth]
+      plot (\x,{1/(1+exp(-3*\x))});
+    \fill[ubaccent] (0.4,{1/(1+exp(-1.2))}) circle (1.5pt);
+  \end{tikzpicture}%
+}{LogReg}{%
+  softmax posterior\\
+  $C\!\in\!\{10^{-3},\dots,10^{2}\}$\\
+  \textbf{best $C=0.3$}\\
+  \texttt{class\_weight=balanced}\\
+  \textcolor{ubaccent}{\textbf{stem=True}}
+}\hspace{0.015\textwidth}%
+% --- SVM icon: hyperplane separating two classes
+\modelcard{%
+  \begin{tikzpicture}[scale=0.55]
+    \fill[ubblue!70]   (-1.0,-0.5) circle (2.5pt);
+    \fill[ubblue!70]   (-1.2, 0.2) circle (2.5pt);
+    \fill[ubblue!70]   (-0.6,-0.8) circle (2.5pt);
+    \fill[ubblue!70]   (-0.4, 0.5) circle (2.5pt);
+    \fill[ubaccent!80] ( 0.6,-0.4) circle (2.5pt);
+    \fill[ubaccent!80] ( 1.0, 0.4) circle (2.5pt);
+    \fill[ubaccent!80] ( 1.2,-0.7) circle (2.5pt);
+    \fill[ubaccent!80] ( 0.8, 0.9) circle (2.5pt);
+    \draw[ubdark,line width=1pt] (-1.6,1.0) -- (1.6,-1.0);
+    \draw[ubdark!40,dashed]      (-1.6,1.4) -- (1.6,-0.6);
+    \draw[ubdark!40,dashed]      (-1.6,0.6) -- (1.6,-1.4);
+  \end{tikzpicture}%
+}{Linear SVM}{%
+  max-margin hyperplane\\
+  $C\!\in\!\{0.1,\dots,5.0\}$\\
+  \textbf{best $C=0.5$}\\
+  + \textcolor{ubaccent}{\textbf{Platt calibration}} (5-fold)\\
+  stem=False
+}\hspace{0.015\textwidth}%
+% --- RoBERT icon: stacked transformer blocks
+\modelcard{%
+  \begin{tikzpicture}[scale=0.55]
+    \foreach \y/\op in {0/0.35, 0.45/0.55, 0.9/0.75, 1.35/0.95}
+      \fill[ubblue,opacity=\op,rounded corners=2pt] (-1.0,\y) rectangle (1.0,\y+0.32);
+    \draw[ubaccent,line width=1pt,->] (0,-0.4) -- (0,-0.05);
+    \node[font=\tiny\bfseries,text=ubaccent] at (0,-0.55) {[CLS]};
+  \end{tikzpicture}%
+}{RoBERT}{%
+  Romanian BERT\\
+  AdamW, lr $=2\!\cdot\!10^{-5}$\\
+  batch 16, 5 epochs\\
+  classifier head $\to$ 5 clase\\
+  \sub{baseline contextual}
+}
+\end{center}
+\vspace{0.4em}
+\begin{center}
+\begin{minipage}{0.92\textwidth}
+\centering\sub{5-fold \texttt{StratifiedKFold} CV --- evita fold-uri fara homophobia (doar 125 ex.\ train).}
+\end{minipage}
+\end{center}
 \end{frame}
 
 % ====================================================
