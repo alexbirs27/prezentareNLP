@@ -63,8 +63,21 @@
 % ====================================================
 
 \begin{frame}{Cuprins}
-  \setbeamertemplate{section in toc}[sections numbered]
-  \tableofcontents[hideallsubsections]
+\vspace{0.4em}
+\newcommand{\tocitem}[2]{%
+  \makebox[0.7cm][l]{\textcolor{ubaccent}{\textbf{\large#1.}}}\large#2\\[0.55em]}
+\begin{columns}[T,onlytextwidth]
+  \column{0.48\textwidth}
+  \tocitem{1}{Motivatie}
+  \tocitem{2}{Related Work}
+  \tocitem{3}{Date}
+  \tocitem{4}{Preprocesare}
+  \column{0.48\textwidth}
+  \tocitem{5}{Modele}
+  \tocitem{6}{Rezultate}
+  \tocitem{7}{Perspective}
+  \tocitem{8}{Concluzii}
+\end{columns}
 \end{frame}
 
 % ====================================================
@@ -219,20 +232,28 @@ CoRoSeOf            & 39{,}008 & sexism / ofensa \\
 \end{frame}
 
 \begin{frame}{Subset experimental stratificat}
-\begin{columns}[T]
-\column{0.5\textwidth}
-\begin{itemize}
+\vspace{0.3em}
+\begin{columns}[T,onlytextwidth]
+\column{0.46\textwidth}
+\begin{block}{Compozitie}
+\small
+\begin{itemize}\setlength\itemsep{0.25em}
   \item \textbf{800} non-off. \sub{(seed=42)}
-  \item \textbf{200} insult, \textbf{200} sexism
-  \item \textbf{toate} racism (252), homophobia (179)
+  \item \textbf{200} insult \quad \textbf{200} sexism
+  \item \textbf{toate} racism \sub{(252)}
+  \item \textbf{toate} homophobia \sub{(179)}
 \end{itemize}
-\vspace{0.6em}
-\bignum{1{,}631}\\
-\sub{randuri total --- 800 non-off / 831 ofensive}\\[0.6em]
-Split stratificat 70 / 15 / 15.
+\end{block}
+\vspace{0.4em}
+\begin{center}
+\bignum{1{,}631}\\[-0.2em]
+\sub{randuri total --- 800 non-off / 831 ofensive}
+\end{center}
+
 \column{0.5\textwidth}
+\begin{block}{Split stratificat 70 / 15 / 15}
 \centering
-\renewcommand{\arraystretch}{1.2}
+\renewcommand{\arraystretch}{1.25}
 \footnotesize
 \begin{tabular}{lrrrrrr}
 \toprule
@@ -243,6 +264,9 @@ Val   &   245   & 120 &  30 &  38 &  27 &  30 \\
 Test  &   245   & 120 &  30 &  38 &  27 &  30 \\
 \bottomrule
 \end{tabular}
+\end{block}
+\vspace{0.3em}
+\begin{center}\sub{Stratificare per-clasa $\Rightarrow$ fiecare clasa apare in fiecare partitie.}\end{center}
 \end{columns}
 \end{frame}
 
