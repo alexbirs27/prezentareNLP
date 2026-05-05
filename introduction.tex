@@ -1,0 +1,17 @@
+\section{Introduction}
+\label{sec:introduction}
+
+Hate speech and offensive language detection is a central application of natural language processing for online platforms, comment moderation, and the study of harmful discourse. Harmful content takes many forms --- direct insults, racist or homophobic attacks, misogynistic statements, and stereotypes about vulnerable groups --- and the boundaries between these categories are inherently fuzzy. Detecting such language automatically is hard precisely because offensive meaning is contextual: the same word can be an insult, a quotation, a neutral discussion, or part of a message that criticizes discrimination \citep{akhtar2021whose}.
+
+We focus on Romanian, a language with substantially fewer public hate-speech resources than English, but with a rich set of practical challenges: missing diacritics, slang, spelling variation, leetspeak obfuscation, emoji-heavy text, and short informal messages. A second hard constraint is severe class imbalance. In our unified corpus, racism and homophobia together account for less than 1\% of all examples, while non-offensive text dominates the distribution. In this regime, plain accuracy is a misleading metric --- a model that always predicts \textit{non-offensive} would already exceed 78\% accuracy while being useless for moderation.
+
+\paragraph{Contributions.}
+This paper makes the following contributions:
+\begin{enumerate}
+    \item \textbf{A unified Romanian corpus.} We combine \texttt{news-ro-offense} \citep{readerbenchNewsRoOffense} and CoRoSeOf \citep{coroseof} into a single five-class schema (non-offensive, insult, racism, homophobia, sexism), with 43{,}061 examples and a stratified 1{,}631-example experimental subset that gives the minority classes meaningful presence in train, validation, and test splits.
+    \item \textbf{A Romanian-aware preprocessing pipeline} that handles missing diacritics, character elongation, leetspeak substitutions, emojis, mentions, hashtags, and negation-aware stopword removal --- all motivated by direct inspection of the corpus.
+    \item \textbf{A controlled comparison} of two classical baselines (Logistic Regression and probability-calibrated Linear SVM) over a shared word+character TF-IDF feature space, alongside a fine-tuned RoBERT transformer, with grid-searched hyperparameters and stratified cross-validation.
+    \item \textbf{An ablation study and error analysis} that isolate the impact of stemming, vocabulary filtering, character n-gram range, and feature mixture, identifying the recurring confusion between \textit{insult} and \textit{sexism} as the dominant error mode for both classical models.
+\end{enumerate}
+
+The rest of the paper is organized as follows. Section~\ref{sec:related_work} situates the work within the broader literature on offensive-language detection and perspective-aware annotation. Section~\ref{sec:method} describes the data sources, label-mapping decisions, preprocessing, models, and results. Sections~\ref{sec:future_work}--\ref{sec:limitations} discuss directions for future work and limitations of the present study, and Section~\ref{sec:ethical_statement} states the ethical considerations relevant to this kind of dataset and tooling.

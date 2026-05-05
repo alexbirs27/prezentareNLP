@@ -1,0 +1,6 @@
+\begin{abstract}
+\label{abstract}
+
+We present an end-to-end study of hate speech, offensive language, and misogyny detection in Romanian, a comparatively low-resource setting for this task. We unify two complementary public corpora --- \texttt{news-ro-offense} and CoRoSeOf --- into a single five-class taxonomy (non-offensive, insult, racism, homophobia, sexism), totalling 43{,}061 examples, and derive a stratified experimental subset of 1{,}631 examples that surfaces the rare hate-speech classes. We design a Romanian-aware preprocessing pipeline (diacritic stripping, leetspeak normalization, stemming, emoji-to-text, negation-preserving stopword removal) and contrast two classical baselines that share a word+character TF-IDF feature space --- Logistic Regression and a probability-calibrated Linear SVM --- with a fine-tuned RoBERT transformer. Linear SVM reaches the strongest macro-F1 of \textbf{0.720}, ahead of Logistic Regression at 0.698, with both models clearly outperforming the majority-class baseline on the minority \textit{racism} and \textit{homophobia} classes. We release the unification scheme, the ablation study, and a per-class error analysis as a reproducible reference point for future Romanian hate-speech work.
+
+\end{abstract}

@@ -1,0 +1,176 @@
+\section{Method}
+\label{sec:method}
+
+This section describes the data resources used in the project and the planned experimental pipeline. At the current stage, the dataset construction is the most developed component of the project. The remaining subsections will be expanded after the final training and evaluation runs.
+
+\subsection{Dataset}
+\label{subsec:dataset}
+
+The project uses a unified Romanian dataset for offensive language, hate speech, and sexism detection. The dataset was built by combining two complementary resources: \texttt{news-ro-offense}, a Romanian hate-speech dataset available on Hugging Face \citep{readerbenchNewsRoOffense}, and CoRoSeOf, a Romanian corpus annotated for sexist and offensive language \citep{coroseof}. The first source provides labels for non-offensive text, insults, racism, homophobia, and sexism. The second source contributes a larger number of Romanian examples related to sexism, misogyny, and general offensive language.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lrl}
+\toprule
+Source & Rows & Role \\
+\midrule
+CoRoSeOf & 39,008 & sexism/offense \\
+news-ro-offense & 4,053 & five-class hate/offense \\
+\midrule
+Total & 43,061 & unified corpus \\
+\bottomrule
+\end{tabular}
+\caption{Sources used to build the unified Romanian corpus.}
+\label{tab:dataset_sources}
+\end{table}
+
+The two datasets use different taxonomies, so we mapped them into a common schema. The final columns store the text, the original source and identifier, the five-class label, binary offensive and sexism flags, the target category, the sexism subtype, and an annotation-quality indicator. This schema supports the main five-class task, while also allowing binary experiments for offensive language detection and sexism detection.
+
+\paragraph{Label mapping.}
+For \texttt{news-ro-offense}, the original labels were mapped directly into the shared five-class taxonomy: label 0 to non-offensive text, label 1 to insults, label 2 to racism, label 3 to homophobia, and label 4 to sexism. For all offensive classes, \texttt{offensive\_flag} is set to 1. For sexism, \texttt{sexism\_flag} is also set to 1.
+
+For CoRoSeOf, \textit{Non sexist} examples were mapped to the non-offensive class, while \textit{Non sexist offensive} examples were mapped to the insult/offensive class. The labels \textit{Sexist direct}, \textit{Sexist descriptive}, and \textit{Sexist reporting} were mapped to the sexism class, while preserving the original subtype in \texttt{sexism\_subtype}. This mapping preserves as much semantic information as possible while making the two resources compatible.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{lll}
+\toprule
+Label & Class & Meaning \\
+\midrule
+0 & non-off. & non-offensive text \\
+1 & insult & offensive insult \\
+2 & racism & racist content \\
+3 & homophobia & homophobic content \\
+4 & sexism & sexism or misogyny \\
+\bottomrule
+\end{tabular}
+\caption{Common five-class taxonomy used in the project.}
+\label{tab:label_taxonomy}
+\end{table}
+
+\paragraph{Distribution.}
+The complete unified corpus contains 43,061 rows and is highly imbalanced. The non-offensive class dominates the dataset, while racism and homophobia are rare. This is important for model evaluation: a model can obtain a high accuracy score while still performing poorly on the minority hate-speech classes. For this reason, the project will report macro-F1 and per-class precision, recall, and F1, not only accuracy.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{llrr}
+\toprule
+Label & Class & Full & Demo \\
+\midrule
+0 & non-off. & 33,526 & 800 \\
+1 & insult & 5,079 & 200 \\
+2 & racism & 252 & 252 \\
+3 & homophobia & 179 & 179 \\
+4 & sexism & 4,025 & 200 \\
+\midrule
+Total & -- & 43,061 & 1,631 \\
+\bottomrule
+\end{tabular}
+\caption{Class distribution in the full corpus and in the experimental subset.}
+\label{tab:dataset_distribution}
+\end{table}
+
+Because of the severe imbalance in the complete corpus, we also created a smaller experimental subset. This subset contains 800 non-offensive examples, 200 insult examples, 200 sexism examples, and all available examples for racism and homophobia. The sampling for labels 0, 1, and 4 uses \texttt{random\_state=42}; labels 2 and 3 are kept entirely because they are the rarest classes. The resulting subset contains 1,631 rows: 800 non-offensive examples and 831 offensive examples.
+
+\paragraph{Train, validation, and test splits.}
+The experimental subset was split into train, validation, and test partitions using a stratified 70/15/15 split. The split was performed independently for each class, so that every class remains represented in each partition.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\begin{tabular}{lrrrrrr}
+\toprule
+Split & Total & 0 & 1 & 2 & 3 & 4 \\
+\midrule
+Train & 1,141 & 560 & 140 & 176 & 125 & 140 \\
+Val & 245 & 120 & 30 & 38 & 27 & 30 \\
+Test & 245 & 120 & 30 & 38 & 27 & 30 \\
+\bottomrule
+\end{tabular}
+\caption{Stratified experimental splits. Labels 0--4 correspond to the classes in Table~\ref{tab:label_taxonomy}.}
+\label{tab:demo_splits}
+\end{table}
+
+\paragraph{Dataset limitations.}
+The main limitation is the small number of racism and homophobia examples in the original public resources. Even after constructing the experimental subset, homophobia remains the smallest class, with only 179 examples in total and 27 examples in the test split. Therefore, results for this class should be interpreted carefully. Another limitation is that the unified corpus combines resources from different domains and annotation schemes. This may introduce distributional differences between examples from the two sources, which should be considered during error analysis.
+
+\subsection{Preprocessing}
+\label{subsec:preprocessing}
+
+All texts are passed through a modular preprocessing pipeline applied uniformly to the train, validation, and test splits. The steps are as follows: URLs are replaced with the token \texttt{<URL>}, user mentions (\texttt{@user}) with \texttt{<USER>}, and hashtags are split into their constituent words. Emojis are converted to textual descriptions in English using the \texttt{emoji} library (e.g., \texttt{:angry\_face:} becomes \texttt{angry\_face}), since emojis carry strong affective signals in social-media text. Sequences of repeated characters are collapsed to at most two repetitions (e.g., \textit{frumoasaaaa} $\to$ \textit{frumoasaa}). The text is then lowercased, Romanian diacritics are stripped, punctuation is removed except for \texttt{!} and \texttt{?}, and whitespace is normalized. Stopwords are removed, with the exception of negation words and sense-reversing tokens (\textit{nu, nici, fara}), which are retained because they are meaningful for offensive language detection.
+
+These preprocessing choices are motivated by the specific characteristics of Romanian social-media text. Romanian users frequently omit diacritics when typing on mobile devices or informal platforms, producing forms such as \textit{fara} instead of \textit{fără}; stripping diacritics from all tokens ensures that the same word is not treated as two distinct vocabulary entries. Informal spelling is also common: elongated words (\textit{nuuuu}, \textit{bravo!!!}) are used for emphasis and would otherwise inflate the vocabulary with rare one-off forms. Emojis frequently co-occur with offensive content and carry clear sentiment signals that would be lost if simply discarded. Usernames and URLs carry no semantic content relevant to the classification task and introduce noise if left in place.
+
+Compared to the initial version of the pipeline, two modifications were introduced after inspecting the corpus. First, stemming was enabled (\texttt{stem=True}). Romanian has rich morphological inflection, and on a small training set each word form appears infrequently; stemming collapses variants such as \textit{femei}, \textit{femeie}, \textit{femeilor} into a single root, producing a denser and less noisy feature space and reducing the vocabulary from approximately 130,000 to around 12,700 features. Second, a leetspeak normalization step was added, which maps digits and symbols commonly used to disguise offensive words back to their corresponding letters (\texttt{0}$\to$\texttt{o}, \texttt{3}$\to$\texttt{e}, \texttt{4}$\to$\texttt{a}, \texttt{@}$\to$\texttt{a}, etc.). This step is necessary because users deliberately substitute letters with digits to evade automatic filters; without it, words such as \textit{pr0asta} or \textit{f3mei} would not be recognized as offensive forms.
+
+
+\noindent\textbf{Preprocessing example.}
+\begin{center}
+\footnotesize
+\begin{tabularx}{\columnwidth}{@{}p{0.28\columnwidth}X@{}}
+\toprule
+Step & Result \\
+\midrule
+Raw text & \textit{@user esti pr0asta!! \#romani} \\
+Mention/hashtag & \texttt{<USER> esti pr0asta romani} \\
+Leetspeak & \texttt{<USER> esti proasta romani} \\
+Lowercase & \texttt{<user> esti proasta romani} \\
+Stopwords & \texttt{<user> proasta romani} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+
+\subsection{Models and Experiments}
+\label{subsec:models_experiments}
+
+\paragraph{Feature representation.}
+Both models use TF-IDF as the feature extraction method, with a shared vectorization pipeline. We combine word-level and character-level TF-IDF features into a single sparse matrix: the word vectorizer uses unigrams and bigrams (\texttt{ngram\_range=(1,\,2)}) and the character vectorizer uses 3- to 5-grams (\texttt{ngram\_range=(3,\,5)}), both with \texttt{min\_df=3}, \texttt{max\_df=0.9}, and \texttt{sublinear\_tf=True}. The combined feature matrix contains approximately 20,000 features for the experimental subset. Both vectorizers are fit exclusively on the training split and applied to validation and test without re-fitting, to avoid data leakage. Using a shared vectorization module ensures that any difference in performance between the two models is attributable to the classifier, not to differences in the feature space.
+
+\paragraph{Model selection.}
+We selected Logistic Regression and Linear SVM as the two models to compare. Both are strong classical baselines for text classification: they are computationally efficient, work well with high-dimensional sparse TF-IDF representations, and are interpretable through their learned feature weights. Logistic Regression models the posterior class probability directly via a softmax output, while Linear SVM finds the maximum-margin separating hyperplane in feature space. Compared to non-linear alternatives such as kernel SVMs, random forests, or neural networks, both methods are well-suited to small and medium datasets where the number of features can exceed the number of training examples. In addition to these classical baselines, we also evaluated a transformer-based Romanian language model, RoBERT, in order to compare sparse lexical models with contextual representations.
+
+\paragraph{Training setup.}
+Both models are trained using \texttt{GridSearchCV} with \texttt{StratifiedKFold} cross-validation ($k=5$) to select the regularization parameter $C$. Stratified folds are necessary because the dataset is imbalanced: a random split could produce folds with no examples from the rarest class (homophobia has only 125 training examples), causing the cross-validation score to be undefined or misleading. For Logistic Regression, $C$ is searched over $\{0.001, 0.01, 0.1, 0.3, 1.0, 3.0, 10.0, 100.0\}$ with best $C=0.3$; for Linear SVM, over $\{0.1, 0.5, 1.0, 2.0, 5.0\}$ with best $C=0.5$. Both models use \texttt{class\_weight=``balanced''}, which assigns each class a weight inversely proportional to its frequency, effectively optimizing toward macro-F1 rather than accuracy. All experiments use \texttt{random\_state=42} for reproducibility.
+
+\paragraph{Ablation studies on Logistic Regression.}
+We conducted a series of ablation experiments on the Logistic Regression model to identify the preprocessing and vectorization choices that most affect performance. Starting from a baseline macro-F1 of 0.671, the most impactful change was enabling stemming (\texttt{stem=True}), which reduced the vocabulary from approximately 130,000 to 12,700 features and improved macro-F1 by 0.02. Romanian has rich morphological inflection, and on a small training set each word form appears infrequently; stemming collapses variants such as \textit{femei}, \textit{femeie}, \textit{femeilor} into a single root, producing a denser and less noisy feature space. Tightening vocabulary filters (\texttt{min\_df=3}, \texttt{max\_df=0.9}) provided a further gain of approximately 0.007 macro-F1 by removing rare noisy tokens. The character n-gram range was tuned and $(3,\,5)$ outperformed $(2,\,4)$ and $(3,\,6)$. The final configuration achieves a macro-F1 of 0.698.
+
+\paragraph{SVM improvements.}
+The initial SVM configuration used only word-level TF-IDF with a vocabulary capped at 10,000 features, yielding a macro-F1 of 0.645. We introduced three targeted improvements. First, the vectorization was upgraded to the shared word+char TF-IDF pipeline, bringing the feature space to approximately 20,000 features; character n-grams partially compensate for the absence of stemming by capturing morphological suffixes directly (e.g., \textit{-elor}, \textit{-ilor}). Second, \texttt{LinearSVC} was wrapped with \texttt{CalibratedClassifierCV} (5-fold) to obtain calibrated class probabilities via Platt scaling — necessary because, unlike Logistic Regression, \texttt{LinearSVC} does not natively produce probability estimates. Third, \texttt{dual=``auto''} was set to let sklearn select the optimal solver formulation based on the ratio of samples to features. Stemming was kept disabled (\texttt{stem=False}) to preserve exact word forms relevant to hate speech (inflection, grammatical gender). These changes raised macro-F1 from 0.645 to 0.720, surpassing Logistic Regression.
+
+\paragraph{RoBERT transformer model.}
+As a neural contextual baseline, we fine-tuned RoBERT, a Romanian BERT-style transformer model, on the same five-class classification task. Unlike Logistic Regression and Linear SVM, which use manually engineered TF-IDF features, RoBERT operates directly on the raw text using its pretrained subword tokenizer. This allows the model to use contextual information and word order, rather than relying only on isolated word and character n-grams.
+
+We fine-tuned the model on the demo train split and selected the best checkpoint using the validation split. The classifier head was adapted to the five project labels: non-offensive, insult, racism, homophobia, and sexism. Training was performed with AdamW, a learning rate of $2\cdot10^{-5}$, mini-batches of 16 examples, and 5 epochs. Since the model was initialized from a Romanian pretrained checkpoint, only the task-specific classification layer was learned from scratch, while the transformer encoder was fine-tuned.
+
+
+\paragraph{Evaluation metrics.}
+The primary metric is macro-F1, which averages the per-class F1 score treating all classes equally regardless of their frequency. This is the appropriate choice for an imbalanced dataset: a model that always predicts \textit{non-offensive} would achieve 78\% accuracy while being useless for detection. We additionally report accuracy, weighted-F1, and per-class precision, recall, and F1.
+
+\paragraph{Results.}
+Table~\ref{tab:results} summarizes the final performance of both models on the validation split of the experimental subset. Linear SVM achieves a higher macro-F1 (0.720 vs.\ 0.698) and outperforms Logistic Regression on every per-class metric except \textit{targeted\_insult}, where both models struggle due to the high overlap with sexism and generic offensive language. The SVM margin-based objective appears to provide stronger separation for the minority classes \textit{racist} and \textit{homophobic}, which have fewer than 40 training examples each.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabularx}{\columnwidth}{lXXXXXX}
+\toprule
+Model & Acc. & F1\textsubscript{mac.} & F1\textsubscript{ins.} & F1\textsubscript{rac.} & F1\textsubscript{hom.} & F1\textsubscript{sex.} \\
+\midrule
+LogReg     & 0.751 & 0.698 & 0.517 & 0.784 & 0.667 & 0.690 \\
+Linear SVM & 0.788 & 0.720 & 0.490 & 0.833 & 0.640 & 0.772 \\
+\bottomrule
+\end{tabularx}
+\caption{Validation results on the experimental subset (demo splits, 245 examples). Both models use word+char TF-IDF; LogReg additionally uses stemming.}
+\label{tab:results}
+\end{table}
+
+
+\paragraph{Error analysis.}
+The most frequent confusion for both models is between \textit{targeted\_insult} and the other offensive classes, particularly \textit{sexism}. This is expected: many sexist utterances are also generic insults, and the boundary between the two categories is annotation-dependent. The \textit{homophobic} class remains the hardest to detect, with only 125 training examples; the model tends to classify homophobic content as either a generic insult or non-offensive. A second common error is predicting \textit{non-offensive} for borderline texts that mention identity groups in a neutral framing — the model lacks the pragmatic context needed to distinguish a factual mention from an abusive one.
+
