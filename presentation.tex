@@ -13,17 +13,23 @@
 \providecommand{\cite}[1]{}
 \usepackage{xcolor}
 \usepackage{tikz}
-\usetikzlibrary{positioning,arrows.meta,shapes.geometric,shadows,backgrounds,calc,decorations.pathmorphing,fit,shapes.symbols}
+\usetikzlibrary{positioning,arrows.meta,shapes.geometric,shadows,backgrounds,calc,decorations.pathmorphing,fit,shapes.symbols,fadings,shadings}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.17}
 
 % ============== COLORS ==============
 \definecolor{ubblue}{HTML}{1F3A93}
+\definecolor{ubblueDeep}{HTML}{0F1F5C}
+\definecolor{ubblueLight}{HTML}{4A6BC8}
 \definecolor{ubaccent}{HTML}{C0392B}
+\definecolor{ubaccentSoft}{HTML}{E74C3C}
+\definecolor{ubgold}{HTML}{D4A24C}
 \definecolor{ubsoft}{HTML}{ECF0F1}
+\definecolor{ubcream}{HTML}{F8F4EC}
 \definecolor{ubdark}{HTML}{2C3E50}
 \definecolor{ubgreen}{HTML}{27AE60}
 \definecolor{uborange}{HTML}{E67E22}
+\definecolor{ubpurple}{HTML}{8E44AD}
 
 \setbeamercolor{normal text}{fg=ubdark}
 \setbeamercolor{alerted text}{fg=ubaccent}
@@ -37,41 +43,94 @@
 \metroset{block=fill, progressbar=frametitle, sectionpage=progressbar, numbering=fraction}
 
 % =====================================================
+% Subtle gradient background + decorative corner ornament
+% (applied to every content slide; standout/title overlay it)
+% =====================================================
+\setbeamertemplate{background canvas}{%
+\begin{tikzpicture}[remember picture,overlay]
+  \shade[top color=white, bottom color=ubcream!60]
+    (current page.north west) rectangle (current page.south east);
+  % Faint concentric ornament (bottom right)
+  \begin{scope}[shift={([xshift=-1.6cm,yshift=1.4cm]current page.south east)},opacity=0.10]
+    \foreach \r in {0.25,0.55,0.85,1.15}
+      \draw[ubblue,line width=0.9pt] (0,0) circle (\r);
+    \fill[ubaccent] (0,0) circle (0.10);
+  \end{scope}
+  % Faint dot grid (top left, very subtle)
+  \begin{scope}[shift={([xshift=0.5cm,yshift=-1.2cm]current page.north west)},opacity=0.08]
+    \foreach \x in {0,1,2,3,4}
+      \foreach \y in {0,1,2}
+        \fill[ubblue] (\x*0.18,-\y*0.18) circle (0.7pt);
+  \end{scope}
+\end{tikzpicture}}
+
+% =====================================================
+% Custom itemize bullets in accent red
+% =====================================================
+\setbeamertemplate{itemize item}{\small\textcolor{ubaccent}{\raisebox{0.15ex}{$\blacktriangleright$}}}
+\setbeamertemplate{itemize subitem}{\textcolor{ubaccent!70}{$\circ$}}
+\setbeamertemplate{itemize subsubitem}{\textcolor{ubaccent!50}{$\cdot$}}
+
+% =====================================================
+% Frametitle: add gold accent right pill
+% =====================================================
+\setbeamercolor{frametitle right}{bg=ubaccent,fg=white}
+
+% =====================================================
 % Custom section page: giant numeral + accent bar + dots
 % =====================================================
 \setbeamertemplate{section page}{%
 \begin{tikzpicture}[overlay,remember picture]
-  % Left blue panel
-  \fill[ubblue] (current page.south west) rectangle ([xshift=3.4cm]current page.north west);
-  % Thin red accent strip
-  \fill[ubaccent] ([xshift=3.4cm]current page.south west) rectangle ([xshift=3.55cm]current page.north west);
+  % Diagonal gradient blue panel (deep top-left, lighter bottom-right)
+  \shade[top color=ubblueDeep, bottom color=ubblue!90!ubaccent]
+    (current page.south west) rectangle ([xshift=3.4cm]current page.north west);
+  % Gold + red double accent strip
+  \fill[ubaccent] ([xshift=3.4cm]current page.south west) rectangle ([xshift=3.5cm]current page.north west);
+  \fill[ubgold] ([xshift=3.5cm]current page.south west) rectangle ([xshift=3.55cm]current page.north west);
 
-  % Decorative top dots
-  \foreach \i in {0,1,...,5}{
-    \fill[white,opacity=0.18] ([xshift=0.55cm+\i*0.42cm,yshift=-1.0cm]current page.north west) circle (4pt);
-  }
+  % Decorative concentric arcs (in panel)
+  \begin{scope}[shift={([xshift=2.7cm,yshift=-1.4cm]current page.north west)},opacity=0.20]
+    \foreach \r in {0.4,0.8,1.2,1.6,2.0}
+      \draw[white,line width=0.8pt] (0,0) circle (\r);
+  \end{scope}
   % Decorative bottom dots
   \foreach \i in {0,1,...,5}{
-    \fill[white,opacity=0.10] ([xshift=0.55cm+\i*0.42cm,yshift=0.9cm]current page.south west) circle (4pt);
+    \fill[white,opacity=0.14] ([xshift=0.55cm+\i*0.42cm,yshift=0.9cm]current page.south west) circle (4pt);
+  }
+  % Top mini-pills cluster
+  \foreach \i in {0,1,2}{
+    \fill[white,opacity=0.20,rounded corners=2pt]
+      ([xshift=0.55cm+\i*0.55cm,yshift=-0.95cm]current page.north west) rectangle
+      ([xshift=0.95cm+\i*0.55cm,yshift=-0.75cm]current page.north west);
   }
 
   % Giant section number (left panel)
-  \node[text=white,font=\fontsize{110}{110}\selectfont\bfseries,opacity=0.95,anchor=center]
+  \node[text=white,font=\fontsize{120}{120}\selectfont\bfseries,anchor=center]
     at ([xshift=1.7cm,yshift=-4.3cm]current page.north west)
     {\insertsectionnumber};
 
-  % Section title (right side)
-  \node[text=ubblue,anchor=west,font=\fontsize{30}{34}\selectfont\bfseries,align=left]
+  % Section title (right side) -- elegant typography
+  \node[text=ubblueDeep,anchor=west,font=\fontsize{32}{36}\selectfont\bfseries,align=left]
     at ([xshift=4.1cm,yshift=-3.9cm]current page.north west)
     {\insertsectionhead};
-  % Accent underline
-  \draw[ubaccent,line width=2.5pt,line cap=round]
+  % Double accent underline (red + gold)
+  \draw[ubaccent,line width=3pt,line cap=round]
     ([xshift=4.1cm,yshift=-4.7cm]current page.north west) --
-    ([xshift=6.4cm,yshift=-4.7cm]current page.north west);
-  % Subtle caption
+    ([xshift=6.0cm,yshift=-4.7cm]current page.north west);
+  \draw[ubgold,line width=3pt,line cap=round]
+    ([xshift=6.1cm,yshift=-4.7cm]current page.north west) --
+    ([xshift=6.7cm,yshift=-4.7cm]current page.north west);
+  % Subtle italic caption
   \node[text=ubdark!55,anchor=west,font=\normalsize\itshape,align=left]
-    at ([xshift=4.1cm,yshift=-5.25cm]current page.north west)
+    at ([xshift=4.1cm,yshift=-5.3cm]current page.north west)
     {sectiunea \insertsectionnumber\ din 8};
+
+  % Decorative right-side ornament
+  \begin{scope}[shift={([xshift=-1.8cm,yshift=-3.8cm]current page.north east)},opacity=0.15]
+    \foreach \r in {0.5,1.0,1.5,2.0,2.5}
+      \draw[ubblue,line width=1pt] (0,0) circle (\r);
+    \fill[ubaccent,opacity=0.5] (0,0) circle (0.2);
+  \end{scope}
 \end{tikzpicture}
 }
 
@@ -115,9 +174,18 @@
 \setbeamertemplate{footline}{}
 \begin{frame}[plain]
 \begin{tikzpicture}[overlay,remember picture]
-  % Background gradient strip on top
-  \fill[ubblue] (current page.north west) rectangle ([yshift=-3.4cm]current page.north east);
-  \fill[ubaccent] ([yshift=-3.4cm]current page.north west) rectangle ([yshift=-3.55cm]current page.north east);
+  % Diagonal gradient hero strip
+  \shade[left color=ubblueDeep, right color=ubblue!85!ubpurple]
+    (current page.north west) rectangle ([yshift=-3.4cm]current page.north east);
+  % Double accent strips (red + gold)
+  \fill[ubaccent] ([yshift=-3.4cm]current page.north west) rectangle ([yshift=-3.5cm]current page.north east);
+  \fill[ubgold]   ([yshift=-3.5cm]current page.north west) rectangle ([yshift=-3.55cm]current page.north east);
+  % Subtle diagonal lines pattern in strip
+  \begin{scope}
+    \clip (current page.north west) rectangle ([yshift=-3.4cm]current page.north east);
+    \foreach \i in {0,1,...,40}
+      \draw[white,opacity=0.04,line width=0.6pt] ($(current page.north west)+(\i*0.6,0)$) -- ++(2,-3.5);
+  \end{scope}
 
   % Decorative concentric arcs (top right)
   \begin{scope}[shift={([xshift=-1.2cm,yshift=-1.6cm]current page.north east)}]
@@ -779,8 +847,16 @@ Orice deployment in productie necesita \alert{revizuire umana} pentru a evita de
 \setbeamertemplate{footline}{}
 \begin{frame}[plain]
 \begin{tikzpicture}[overlay,remember picture]
-  % Full blue background
-  \fill[ubblue] (current page.north west) rectangle (current page.south east);
+  % Diagonal gradient full background (deep top-left to purple bottom-right)
+  \shade[top color=ubblueDeep, bottom color=ubblue!75!ubpurple]
+    (current page.north west) rectangle (current page.south east);
+  % Subtle diagonal line texture
+  \begin{scope}
+    \clip (current page.north west) rectangle (current page.south east);
+    \foreach \i in {0,1,...,60}
+      \draw[white,opacity=0.025,line width=0.5pt]
+        ($(current page.north west)+(\i*0.5,0)$) -- ++(3,-9);
+  \end{scope}
   % Decorative big circles (top right)
   \begin{scope}[shift={([xshift=-1.5cm,yshift=-1.5cm]current page.north east)}]
     \foreach \r in {0.6,1.2,...,3.6}
